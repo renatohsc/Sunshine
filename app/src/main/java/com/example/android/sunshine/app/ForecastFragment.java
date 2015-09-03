@@ -4,7 +4,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.text.format.Time;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -28,6 +27,8 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -56,7 +57,7 @@ public class ForecastFragment extends Fragment {
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         // Inflate the menu; this adds items to the action bar if it is present.
 
-            inflater.inflate(R.menu.forecastmenu, menu);
+        inflater.inflate(R.menu.forecastmenu, menu);
 
 
 
@@ -112,16 +113,16 @@ public class ForecastFragment extends Fragment {
 
         // Trying to create adapter
 
-         mForecastAdapter =
+        mForecastAdapter =
                 new ArrayAdapter<String>(
-                //contexto
-                getActivity(),
-                //id layout lista
-                R.layout.list_item_forecast,
-                //id do texto pra preencher
-                R.id.list_item_forecast_textview,
-                // dados de tempo
-                weekForecast);
+                        //contexto
+                        getActivity(),
+                        //id layout lista
+                        R.layout.list_item_forecast,
+                        //id do texto pra preencher
+                        R.id.list_item_forecast_textview,
+                        // dados de tempo
+                        weekForecast);
 
 
         View rootView = inflater.inflate(R.layout.forecast_fragment, container, false);
@@ -150,11 +151,15 @@ public class ForecastFragment extends Fragment {
          * so for convenience we're breaking it out into its own method now.
         */
 
-        private String getReadableDateString(long time){
+        private String getReadableDateString(Date time){
             // Because the API returns a unix timestamp (measured in seconds),
             // it must be converted to milliseconds in order to be converted to valid date.
+          //  SimpleDateFormat shortenedDateFormat = new SimpleDateFormat("EEE MMM dd");
+          //  return shortenedDateFormat.format(time);
             SimpleDateFormat shortenedDateFormat = new SimpleDateFormat("EEE MMM dd");
-            return shortenedDateFormat.format(time);
+              return shortenedDateFormat.format(time);
+
+
         }
 
 
@@ -199,25 +204,23 @@ public class ForecastFragment extends Fragment {
             // current day, we're going to take advantage of that to get a nice
             // normalized UTC date for all of our weather.
 
-            Time dayTime = new Time();
-            dayTime.setToNow();
+    //        Time dayTime = new Time();
+    //        dayTime.setToNow();
 
-            //Calendar dayTime = Calendar.getInstance();
-            //Date date =  calendar.getTime();
+    // time deprecated, substitute for calendar
 
+            Calendar calendar = Calendar.getInstance();
+            Date dayTime = new Date();
 
-           // Calendar calendar = new GregorianCalendar();
-            //Date dayTime = new Date();
-           // calendar.setTime(dayTime);
 
 
             // we start at the day returned by local time. Otherwise this is a mess.
-            int julianStartDay = Time.getJulianDay(System.currentTimeMillis(), dayTime.gmtoff);
+          //  int julianStartDay = Time.getJulianDay(System.currentTimeMillis(), dayTime.gmtoff);
 
 
 
             // now we work exclusively in UTC
-            dayTime = new Time();
+          //  dayTime = new Time();
 
             String[] resultStrs = new String[numDays];
             for(int i = 0; i < weatherArray.length(); i++) {
@@ -232,10 +235,19 @@ public class ForecastFragment extends Fragment {
                 // The date/time is returned as a long.  We need to convert that
                 // into something human-readable, since most people won't read "1400356800" as
                 // "this saturday".
-                long dateTime;
+                //long dateTime;
                 // Cheating to convert this to UTC time, which is what we want anyhow
-                dateTime = dayTime.setJulianDay(julianStartDay+i);
-                day = getReadableDateString(dateTime);
+                // dateTime = dayTime.setJulianDay(julianStartDay+
+
+
+                calendar.setTime(dayTime);
+                calendar.add(Calendar.DATE, i); //minus number would decrement the days
+                Date dayFinal = calendar.getTime();
+
+                day = getReadableDateString(dayFinal);
+
+                //log new day
+               // Log.v(LOG_TAG, "DayNEW " + day);
 
                 // description is in a child array called "weather", which is 1 element long.
                 JSONObject weatherObject = dayForecast.getJSONArray(OWM_WEATHER).getJSONObject(0);
@@ -251,7 +263,7 @@ public class ForecastFragment extends Fragment {
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
 
-           // for (String s : resultStrs) {
+            // for (String s : resultStrs) {
             //    Log.v(LOG_TAG, "Forecast entry: " + s);
             //}
             return resultStrs;
@@ -280,7 +292,9 @@ public class ForecastFragment extends Fragment {
             String format = params[1];
             String units = params[2];
             String numDaysx = params[3];
-            Integer numDays = 7;
+           // Integer numDays = 7;
+            Integer numDays = Integer.valueOf(numDaysx);
+
 
 
             try {
@@ -337,7 +351,7 @@ public class ForecastFragment extends Fragment {
                 forecastJsonStr = buffer.toString();
 
                 //VERBOSE LOG
-               // Log.v(LOG_TAG, "Forecast Json String" + forecastJsonStr);
+                // Log.v(LOG_TAG, "Forecast Json String" + forecastJsonStr);
 
 
             } catch (IOException e) {
